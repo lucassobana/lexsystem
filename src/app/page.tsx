@@ -1,66 +1,81 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
 
-export default function Home() {
+import {
+  Box,
+  Flex,
+  Heading,
+  Icon,
+  useDisclosure,
+} from "@chakra-ui/react";
+import { useState } from "react";
+import { DataTable } from "@/components/DataTable";
+import { useExpedientes } from "@/contexts/ExpedienteContext";
+import { Sidebar } from "@/components/Sidebar";
+import { Header } from "@/components/Header";
+import { StatsGrid } from "@/components/StatsGrid"; // Importe aqui
+import { CadastroModal } from "@/components/CadastroModal";
+import { MdOutlineFolderOpen } from "react-icons/md";
+
+export default function Dashboard() {
+  const { expedientes } = useExpedientes();
+  const [activeTab, setActiveTab] = useState<"ativos" | "respondidos">(
+    "ativos",
+  );
+  const { isOpen, onOpen, onClose } = useDisclosure();
+
+  const ativos = expedientes.filter(
+    (e) => e.status !== "Respondido" && e.status !== "Entregue",
+  );
+  const currentData =
+    activeTab === "ativos"
+      ? ativos
+      : expedientes.filter(
+          (e) => e.status === "Respondido" || e.status === "Entregue",
+        );
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <Flex minH="100vh">
+      <Sidebar />
+      <Box flex="1" ml={{ base: "0", md: "80px" }}>
+        <Header
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          onOpenCadastro={onOpen}
         />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.tsx file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+
+        <Box p={10} maxW="1800px" mx="auto">
+          {/* Componente funcional agora processa os dados automaticamente */}
+          <StatsGrid expedientes={expedientes} />
+
+          <Box
+            bg="brand.surfaceContainerLowest"
+            border="1px solid"
+            borderColor="brand.outlineVariant"
+            borderRadius="lg"
+            overflow="hidden"
+            mb={8}
           >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+            <Flex
+              p={4}
+              borderBottom="1px solid"
+              borderColor="brand.outlineVariant"
+              bg="brand.surfaceContainerLow"
+              align="center"
+              justify="space-between"
+            >
+              <Flex align="center" gap={2} color="brand.primary">
+                <Icon as={MdOutlineFolderOpen} boxSize={5} />
+                <Heading size="sm">Fila de Expedientes</Heading>
+              </Flex>
+            </Flex>
+            <DataTable
+              data={currentData}
+              isRespondidosTab={activeTab === "respondidos"}
             />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+          </Box>
+        </Box>
+      </Box>
+      <CadastroModal isOpen={isOpen} onClose={onClose} />
+    </Flex>
   );
 }
