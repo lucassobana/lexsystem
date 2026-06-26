@@ -121,7 +121,6 @@ export function CadastroModal({
                             )
                           : ""
                       }
-                      placeholder="dd/mm/aaaa"
                       readOnly
                       cursor="pointer"
                     />
@@ -184,7 +183,6 @@ export function CadastroModal({
                 Número do Processo
               </FormLabel>
               <Input
-                placeholder="Ex: 1023456-78.2023.8.26.0100"
                 value={formData.numeroProcesso}
                 onChange={(e) =>
                   setFormData({ ...formData, numeroProcesso: e.target.value })
@@ -198,7 +196,6 @@ export function CadastroModal({
                 Partes
               </FormLabel>
               <Input
-                placeholder="Ex: João vs. Empresa X"
                 value={formData.partes}
                 onChange={(e) =>
                   setFormData({ ...formData, partes: e.target.value })
@@ -212,7 +209,6 @@ export function CadastroModal({
                 Comarca
               </FormLabel>
               <Input
-                placeholder="Ex: São Paulo / SP"
                 value={formData.comarca}
                 onChange={(e) =>
                   setFormData({ ...formData, comarca: e.target.value })
@@ -244,7 +240,6 @@ export function CadastroModal({
                 Nome
               </FormLabel>
               <Input
-                placeholder="Ex: Marcos Oliveira"
                 value={formData.nome}
                 onChange={(e) =>
                   setFormData({ ...formData, nome: e.target.value })
@@ -259,7 +254,6 @@ export function CadastroModal({
               Situação / Histórico
             </FormLabel>
             <Textarea
-              placeholder="Descreva o status atual do expediente..."
               value={formData.situacaoHistorico}
               onChange={(e) =>
                 setFormData({ ...formData, situacaoHistorico: e.target.value })

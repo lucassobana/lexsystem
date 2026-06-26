@@ -119,7 +119,6 @@ export default function LoginPage() {
                   </InputLeftElement>
                   <Input
                     type="email"
-                    placeholder="exemplo@lexsystem.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     fontSize="sm"
