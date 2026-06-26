@@ -24,41 +24,63 @@ import {
   PopoverContent,
   PopoverBody,
 } from "@chakra-ui/react";
-import { DayPicker } from 'react-day-picker';
-import { ptBR } from 'date-fns/locale';
-import { format, parse } from 'date-fns';
-import 'react-day-picker/dist/style.css';
+import { DayPicker } from "react-day-picker";
+import { ptBR } from "date-fns/locale";
+import { format, parse } from "date-fns";
+import "react-day-picker/dist/style.css";
 import { useExpedientes } from "@/contexts/ExpedienteContext";
-import { StatusExpediente } from "@/types";
+import { StatusExpediente, Expediente } from "@/types";
 import { MdOutlineCalendarToday } from "react-icons/md";
 
 interface CadastroModalProps {
   isOpen: boolean;
   onClose: () => void;
+  expedienteToEdit?: Expediente | null; // Nova prop opcional
 }
 
-export function CadastroModal({ isOpen, onClose }: CadastroModalProps) {
-  const { addExpediente } = useExpedientes();
+const estadoInicial = {
+  data: new Date().toISOString().split("T")[0],
+  status: "Iniciar" as StatusExpediente,
+  numeroProcesso: "",
+  partes: "",
+  comarca: "",
+  honorarios: 0,
+  situacaoHistorico: "",
+  nome: "",
+};
 
-  const estadoInicial = {
-    data: new Date().toISOString().split("T")[0],
-    status: "Iniciar" as StatusExpediente,
-    numeroProcesso: "",
-    partes: "",
-    comarca: "",
-    honorarios: 0,
-    situacaoHistorico: "",
-    nome: "",
-  };
+export function CadastroModal({
+  isOpen,
+  onClose,
+  expedienteToEdit,
+}: CadastroModalProps) {
+  const { addExpediente, updateExpedienteFull } = useExpedientes();
+  const [formData, setFormData] = useState<Expediente | typeof estadoInicial>(estadoInicial);
 
-  const [formData, setFormData] = useState(estadoInicial);
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  const [prevExp, setPrevExp] = useState(expedienteToEdit);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  if (isOpen !== prevIsOpen || expedienteToEdit !== prevExp) {
+    setPrevIsOpen(isOpen);
+    setPrevExp(expedienteToEdit);
+    
+    if (isOpen) {
+      // Se o modal abrir, preenche com os dados de edição ou limpa o form
+      setFormData(expedienteToEdit ? expedienteToEdit : estadoInicial);
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    addExpediente(formData);
+    
+    if (expedienteToEdit) {
+      // EDITA SE TIVER ID
+      await updateExpedienteFull(expedienteToEdit.id, formData);
+    } else {
+      // CRIA SE NÃO TIVER (Forçamos o tipo Omit para ignorar o id na criação)
+      await addExpediente(formData as Omit<Expediente, "id">);
+    }
 
-    // Reseta o formulário e fecha o modal
-    setFormData(estadoInicial);
     onClose();
   };
 
@@ -77,7 +99,7 @@ export function CadastroModal({ isOpen, onClose }: CadastroModalProps) {
         bg="brand.surfaceContainerLowest"
       >
         <ModalHeader color="brand.primary">
-          Cadastrar Novo Expediente
+          {expedienteToEdit ? "Editar Expediente" : "Cadastrar Novo Expediente"}
         </ModalHeader>
         <ModalCloseButton />
 
@@ -120,14 +142,13 @@ export function CadastroModal({ isOpen, onClose }: CadastroModalProps) {
                           ? parse(formData.data, "yyyy-MM-dd", new Date())
                           : undefined
                       }
-                      onSelect={(date) => {
-                        if (date) {
-                          setFormData({
-                            ...formData,
-                            data: format(date, "yyyy-MM-dd"),
-                          });
-                        }
-                      }}
+                      onSelect={(date) =>
+                        date &&
+                        setFormData({
+                          ...formData,
+                          data: format(date, "yyyy-MM-dd"),
+                        })
+                      }
                       locale={ptBR}
                     />
                   </PopoverBody>
@@ -137,7 +158,7 @@ export function CadastroModal({ isOpen, onClose }: CadastroModalProps) {
 
             <FormControl isRequired>
               <FormLabel fontSize="sm" color="brand.onSurfaceVariant">
-                Status
+                Expediente
               </FormLabel>
               <Select
                 value={formData.status}
@@ -220,7 +241,7 @@ export function CadastroModal({ isOpen, onClose }: CadastroModalProps) {
 
             <FormControl isRequired>
               <FormLabel fontSize="sm" color="brand.onSurfaceVariant">
-                Nome do Advogado/Responsável
+                Nome
               </FormLabel>
               <Input
                 placeholder="Ex: Marcos Oliveira"
@@ -264,7 +285,7 @@ export function CadastroModal({ isOpen, onClose }: CadastroModalProps) {
             _hover={{ bg: "brand.primary" }}
             size="sm"
           >
-            Salvar Expediente
+            {expedienteToEdit ? "Salvar Alterações" : "Salvar Expediente"}
           </Button>
         </ModalFooter>
       </ModalContent>

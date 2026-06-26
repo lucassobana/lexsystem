@@ -29,7 +29,6 @@ export function StatsGrid({ expedientes }: StatsGridProps) {
         <Text fontSize="xs" color="brand.onSurfaceVariant" mb={1} fontWeight="semibold">Aguardando Resposta</Text>
         <Flex align="flex-end" justify="space-between">
           <Text fontSize="3xl" fontWeight="bold" color="brand.primary">{ativos.length}</Text>
-          <Text fontSize="xs" color="brand.error" fontWeight="bold">Urgente</Text>
         </Flex>
       </Box>
 

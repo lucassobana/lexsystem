@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/client"; // Cliente Supabase
 import {
   Box,
   Flex,
@@ -11,16 +13,16 @@ import {
   Tooltip,
   useBreakpointValue,
   Icon,
+  Skeleton, // Importado para a animação de carregamento
 } from "@chakra-ui/react";
-// Importando os ícones da coleção Material Design
 import {
   MdOutlineDashboard,
   MdOutlineBalance,
   MdOutlineMenu,
   MdOutlineMenuOpen,
+  MdLogout, // Importado o ícone de logout
 } from "react-icons/md";
 
-// Note que agora passamos a referência do componente de ícone, não uma string
 const menuItems = [
   {
     label: "Dashboard",
@@ -31,8 +33,40 @@ const menuItems = [
 ];
 
 export function Sidebar() {
+  const router = useRouter();
+  const supabase = createClient();
+
   const isMobile = useBreakpointValue({ base: true, md: false });
   const [isCollapsed, setIsCollapsed] = useState(true);
+
+  // Estados de Autenticação
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Busca os dados do utilizador logado no Supabase
+  useEffect(() => {
+    async function fetchUser() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        setUserEmail(user.email ?? "");
+        const nameFromMeta =
+          user.user_metadata?.full_name || user.user_metadata?.name;
+        setUserName(nameFromMeta || user.email?.split("@")[0] || "Advogado");
+      }
+      setIsLoading(false);
+    }
+    fetchUser();
+  }, [supabase.auth]);
+
+  // Função de Logout
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push("/login");
+  };
 
   const sidebarWidth = isCollapsed ? "80px" : "256px";
 
@@ -182,35 +216,59 @@ export function Sidebar() {
         </VStack>
       </Box>
 
+      {/* RODAPÉ DO UTILIZADOR */}
       <Box
         p={isCollapsed ? 4 : 6}
+        pb={isCollapsed ? 6 : 8} // <-- Aumentamos o padding inferior (espaço extra no fundo)
+        flexShrink={0} // <-- IMPEDE que a lista de menus esmague o rodapé
         borderTop="1px solid"
         borderColor="brand.outlineVariant"
       >
         <Flex
           align="center"
-          justify={isCollapsed ? "center" : "flex-start"}
-          gap={3}
+          justify="center"
+          gap={1}
         >
-          <Avatar
-            size="sm"
-            name="Dr. Ricardo Silva"
-            src="https://bit.ly/dan-abramov"
-            cursor="pointer"
-          />
+          <Flex align="center" gap={1} overflow="hidden">
+            <Skeleton isLoaded={!isLoading} borderRadius="full">
+              <Avatar
+                size="sm"
+                name={userName || "Usuário"}
+                bg="brand.primary"
+                color="white"
+                cursor="pointer"
+              />
+            </Skeleton>
+
+            {!isCollapsed && (
+              <Box overflow="hidden" whiteSpace="nowrap">
+                {/* Trocamos h por minH para não esmagar o texto */}
+                <Skeleton isLoaded={!isLoading} minH="20px" w="120px" mb={1}>
+                  <Text fontSize="sm" fontWeight="bold" color="brand.onSurface" isTruncated textTransform="capitalize" lineHeight="1.2">
+                    {userName}
+                  </Text>
+                </Skeleton>
+                <Skeleton isLoaded={!isLoading} minH="18px" w="140px">
+                  <Text fontSize="xs" color="brand.onSurfaceVariant" isTruncated lineHeight="1.2" pb={1}>
+                    {userEmail}
+                  </Text>
+                </Skeleton>
+              </Box>
+            )}
+          </Flex>
+
+          {/* BOTÃO DE LOGOUT APARECE APENAS QUANDO EXPANDIDO */}
           {!isCollapsed && (
-            <Box overflow="hidden" whiteSpace="nowrap">
-              <Text fontSize="sm" fontWeight="bold" color="brand.onSurface">
-                Dr. Ricardo Silva
-              </Text>
-              <Text
-                fontSize="xs"
-                color="brand.onSurfaceVariant"
-                textTransform="uppercase"
-              >
-                OAB/SP 123.456
-              </Text>
-            </Box>
+            <Tooltip label="Sair do Sistema" placement="top" hasArrow>
+              <IconButton
+                aria-label="Sair"
+                icon={<Icon as={MdLogout} boxSize={5} />}
+                size="sm"
+                variant="ghost"
+                colorScheme="red"
+                onClick={handleLogout}
+              />
+            </Tooltip>
           )}
         </Flex>
       </Box>

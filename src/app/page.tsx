@@ -1,26 +1,18 @@
 "use client";
 
-import {
-  Box,
-  Flex,
-  Heading,
-  Icon,
-  useDisclosure,
-} from "@chakra-ui/react";
+import { Box, Flex, Heading, Icon, useDisclosure } from "@chakra-ui/react";
 import { useState } from "react";
 import { DataTable } from "@/components/DataTable";
 import { useExpedientes } from "@/contexts/ExpedienteContext";
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
-import { StatsGrid } from "@/components/StatsGrid"; // Importe aqui
+import { StatsGrid } from "@/components/StatsGrid";
 import { CadastroModal } from "@/components/CadastroModal";
 import { MdOutlineFolderOpen } from "react-icons/md";
 
 export default function Dashboard() {
   const { expedientes } = useExpedientes();
-  const [activeTab, setActiveTab] = useState<"ativos" | "respondidos">(
-    "ativos",
-  );
+  const [activeTab, setActiveTab] = useState<"ativos" | "respondidos">("ativos");
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   const ativos = expedientes.filter(
@@ -43,8 +35,7 @@ export default function Dashboard() {
           onOpenCadastro={onOpen}
         />
 
-        <Box p={10} maxW="1800px" mx="auto">
-          {/* Componente funcional agora processa os dados automaticamente */}
+        <Box p={10} maxW="2000px" mx="auto">
           <StatsGrid expedientes={expedientes} />
 
           <Box

@@ -16,14 +16,19 @@ import {
   PopoverTrigger,
   PopoverContent,
   PopoverBody,
+  useDisclosure,
+  IconButton,
 } from "@chakra-ui/react";
-import { DayPicker } from 'react-day-picker';
-import { ptBR } from 'date-fns/locale';
-import { format, parse } from 'date-fns';
-import 'react-day-picker/dist/style.css';
+import { DayPicker } from "react-day-picker";
+import { ptBR } from "date-fns/locale";
+import { format, parse } from "date-fns";
+import "react-day-picker/dist/style.css";
 import { Expediente, StatusExpediente } from "@/types";
 import { useExpedientes } from "@/contexts/ExpedienteContext";
 import { COLORS } from "@/colors/colors";
+import { useState } from "react";
+import { MdEdit } from "react-icons/md";
+import { CadastroModal } from "./CadastroModal";
 
 interface DataTableProps {
   data: Expediente[];
@@ -31,44 +36,75 @@ interface DataTableProps {
 }
 
 const statusStyles = {
-  Iniciar: {
-    bg: COLORS.brand.iniciar,
-    color: COLORS.brandText.text,
-  },
-  Entregar: {
-    bg: COLORS.brand.entregar,
-    color: COLORS.brandText.text,
-  },
-  Ciência: {
-    bg: COLORS.brand.ciencia,
-    color: COLORS.brandText.text,
-  },
-  Responder: {
-    bg: COLORS.brand.responder,
-    color: COLORS.brandText.text,
-  },
-  Respondido: {
-    bg: COLORS.brand.respondido,
-    color: COLORS.brandText.text,
-  },
-  Entregue: {
-    bg: COLORS.brand.entregue,
-    color: COLORS.brandText.text,
-  },
+  Iniciar: { bg: COLORS.brand.iniciar, color: COLORS.brandText.text },
+  Entregar: { bg: COLORS.brand.entregar, color: COLORS.brandText.text },
+  Ciência: { bg: COLORS.brand.ciencia, color: COLORS.brandText.text },
+  Responder: { bg: COLORS.brand.responder, color: COLORS.brandText.text },
+  Respondido: { bg: COLORS.brand.respondido, color: COLORS.brandText.text },
+  Entregue: { bg: COLORS.brand.entregue, color: COLORS.brandText.text },
+};
+
+const EditableTextInput = ({
+  initialValue,
+  onSave,
+}: {
+  initialValue: string;
+  onSave: (val: string) => void;
+}) => {
+  const [value, setValue] = useState(initialValue);
+  const [prevInitial, setPrevInitial] = useState(initialValue);
+
+  if (initialValue !== prevInitial) {
+    setValue(initialValue);
+    setPrevInitial(initialValue);
+  }
+
+  const handleBlur = () => {
+    if (value !== initialValue) {
+      onSave(value);
+    }
+  };
+
+  return (
+    <Input
+      variant="unstyled"
+      size="sm"
+      fontSize="sm"
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      onBlur={handleBlur}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.currentTarget.blur();
+        }
+      }}
+    />
+  );
 };
 
 export function DataTable({ data, isRespondidosTab = false }: DataTableProps) {
   const { updateExpediente } = useExpedientes();
 
-  // Mantendo a ordenação por data (recente para antigo)
-  // Substitua a linha do sortedData por esta:
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [selectedExpediente, setSelectedExpediente] =
+    useState<Expediente | null>(null);
+
   const sortedData = [...data].sort(
     (a, b) => new Date(a.data).getTime() - new Date(b.data).getTime(),
   );
 
+  const handleEditClick = (item: Expediente) => {
+    setSelectedExpediente(item);
+    onOpen();
+  };
+
+  const handleCloseModal = () => {
+    setSelectedExpediente(null); // Limpa o item ao fechar
+    onClose();
+  };
+
   return (
     <Box overflowX="auto" w="full">
-      {/* Aumentado a largura para preencher melhor o espaço */}
       <Table variant="unstyled" size="md" w="full" sx={{ minWidth: "1200px" }}>
         <Thead
           bg="#d5d5d5"
@@ -158,6 +194,16 @@ export function DataTable({ data, isRespondidosTab = false }: DataTableProps) {
                 Recebido?
               </Th>
             )}
+            <Th
+              py={4}
+              textAlign="center"
+              color="brand.onSurfaceVariant"
+              fontSize="xs"
+              textTransform="uppercase"
+              w="60px"
+            >
+              Ações
+            </Th>
           </Tr>
         </Thead>
         <Tbody>
@@ -169,7 +215,6 @@ export function DataTable({ data, isRespondidosTab = false }: DataTableProps) {
               borderColor="brand.outlineVariant"
               transition="all 0.2s"
             >
-              {/* DATA - Largura fixa pequena */}
               <Td textAlign="center" w="150px">
                 <Popover>
                   <PopoverTrigger>
@@ -205,18 +250,15 @@ export function DataTable({ data, isRespondidosTab = false }: DataTableProps) {
                 </Popover>
               </Td>
 
-              {/* EXPEDIENTE - Centralizado */}
-              <Td textAlign="center" w="180px">
+              <Td textAlign="center" w="200px">
                 <Flex justify="center">
                   <Select
-                    size="xs" /* Alterado de "xs" para "sm" para um tamanho maior */
+                    size="sm"
                     fontWeight="bold"
                     textAlign="center"
                     textTransform="uppercase"
                     borderRadius="md"
-                    py={2} /* Aumentado o padding vertical */
-                    pl={2}
-                    h="30px" /* Altura definida explicitamente para maior área de clique */
+                    h="30px"
                     bg={statusStyles[item.status].bg}
                     color={statusStyles[item.status].color}
                     value={item.status}
@@ -248,8 +290,6 @@ export function DataTable({ data, isRespondidosTab = false }: DataTableProps) {
                 {item.numeroProcesso}
               </Td>
 
-              {/* PARTES - Ocupa espaço flexível, sem largura máxima */}
-              {/* PARTES - Ocupa espaço flexível e quebra o "vs." em uma nova linha para melhor legibilidade */}
               <Td textAlign="start" fontSize="sm" px={4} whiteSpace="normal">
                 <Flex direction="column" align="center" gap={1}>
                   <Text fontWeight="bold" fontSize="sm" lineHeight="1.2">
@@ -276,7 +316,6 @@ export function DataTable({ data, isRespondidosTab = false }: DataTableProps) {
                 })}
               </Td>
 
-              {/* HISTÓRICO - Ocupa espaço flexível, sem largura máxima */}
               <Td textAlign="center" fontSize="sm" px={4} whiteSpace="normal">
                 <Flex align="center" justify="center" gap={2}>
                   <Box
@@ -286,17 +325,10 @@ export function DataTable({ data, isRespondidosTab = false }: DataTableProps) {
                     flexShrink={0}
                     bg={statusStyles[item.status].bg}
                   />
-                  <Input
-                    variant="unstyled"
-                    size="sm"
-                    fontSize="sm"
-                    value={item.situacaoHistorico}
-                    onChange={(e) =>
-                      updateExpediente(
-                        item.id,
-                        "situacaoHistorico",
-                        e.target.value,
-                      )
+                  <EditableTextInput
+                    initialValue={item.situacaoHistorico}
+                    onSave={(newVal) =>
+                      updateExpediente(item.id, "situacaoHistorico", newVal)
                     }
                   />
                 </Flex>
@@ -325,10 +357,29 @@ export function DataTable({ data, isRespondidosTab = false }: DataTableProps) {
                   </Select>
                 </Td>
               )}
+
+              <Td textAlign="center" w="60px" px={2}>
+                <IconButton
+                  aria-label="Editar Expediente"
+                  icon={<MdEdit size={18} />}
+                  size="sm"
+                  variant="ghost" // "ghost" deixa sem fundo até o rato passar por cima
+                  colorScheme="gray"
+                  color="brand.secondary"
+                  onClick={() => handleEditClick(item)}
+                  _hover={{ bg: "brand.surfaceContainerHigh" }}
+                />
+              </Td>
             </Tr>
           ))}
         </Tbody>
       </Table>
+
+      <CadastroModal
+        isOpen={isOpen}
+        onClose={handleCloseModal}
+        expedienteToEdit={selectedExpediente}
+      />
     </Box>
   );
 }
